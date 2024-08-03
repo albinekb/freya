@@ -1,35 +1,14 @@
-use dioxus_core::{
-    use_hook,
-    AttributeValue,
-};
-use dioxus_hooks::{
-    use_context,
-    use_memo,
-};
-use dioxus_signals::{
-    Memo,
-    Readable,
-    Signal,
-    Writable,
-};
+use dioxus_core::{use_hook, AttributeValue};
+use dioxus_hooks::{use_context, use_memo};
+use dioxus_signals::{Memo, Readable, Signal, Writable};
 use freya_core::{
-    accessibility::ACCESSIBILITY_ROOT_ID,
-    platform_state::NavigationMode,
-    prelude::EventMessage,
+    accessibility::ACCESSIBILITY_ROOT_ID, platform_state::NavigationMode, prelude::EventMessage,
     types::AccessibilityId,
 };
-use freya_elements::events::{
-    keyboard::Code,
-    KeyboardEvent,
-};
+use freya_elements::events::{keyboard::Code, KeyboardEvent};
 use freya_node_state::CustomAttributeValues;
 
-use crate::{
-    use_platform,
-    AccessibilityIdCounter,
-    NavigationMark,
-    UsePlatform,
-};
+use crate::{use_platform, AccessibilityIdCounter, NavigationMark, UsePlatform};
 
 /// Manage the focus operations of given Node
 #[derive(Clone, Copy)]
@@ -50,6 +29,8 @@ impl UseFocus {
                 .send(EventMessage::FocusAccessibilityNode(self.id))
                 .ok();
         }
+
+        // *self.navigation_mode.write() = NavigationMode::Keyboard;
     }
 
     /// Queue a focus to this node
@@ -59,6 +40,7 @@ impl UseFocus {
                 .send(EventMessage::QueueFocusAccessibilityNode(self.id))
                 .ok();
         }
+        // *self.navigation_mode.write() = NavigationMode::Keyboard;
     }
 
     /// Get the node focus ID

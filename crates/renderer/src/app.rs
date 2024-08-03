@@ -1,42 +1,22 @@
 use std::sync::Arc;
 
-use dioxus_core::{
-    Template,
-    VirtualDom,
-};
+use dioxus_core::{Template, VirtualDom};
 use freya_core::prelude::*;
 use freya_engine::prelude::*;
-use freya_native_core::{
-    prelude::NodeImmutableDioxusExt,
-    NodeId,
-};
+use freya_native_core::{prelude::NodeImmutableDioxusExt, NodeId};
 use futures_task::Waker;
 use futures_util::Future;
 use pin_utils::pin_mut;
 use tokio::{
     select,
-    sync::{
-        broadcast,
-        mpsc,
-        watch,
-    },
+    sync::{broadcast, mpsc, watch},
 };
-use torin::geometry::{
-    Area,
-    Size2D,
-};
+use torin::geometry::{Area, Size2D};
 use tracing::info;
-use winit::{
-    dpi::PhysicalSize,
-    event_loop::EventLoopProxy,
-    window::Window,
-};
+use winit::{dpi::PhysicalSize, event_loop::EventLoopProxy, window::Window};
 
 use crate::{
-    accessibility::AccessKitManager,
-    devtools::Devtools,
-    winit_waker::winit_waker,
-    EmbeddedFonts,
+    accessibility::AccessKitManager, devtools::Devtools, winit_waker::winit_waker, EmbeddedFonts,
     HoveredNode,
 };
 
@@ -95,7 +75,7 @@ impl Application {
         let (platform_sender, platform_receiver) = watch::channel(NativePlatformState {
             focused_id: ACCESSIBILITY_ROOT_ID,
             preferred_theme: window.theme().map(|theme| theme.into()).unwrap_or_default(),
-            navigation_mode: NavigationMode::default(),
+            navigation_mode: NavigationMode::Keyboard,
             information: PlatformInformation::from_winit(window),
             scale_factor: window.scale_factor(),
         });

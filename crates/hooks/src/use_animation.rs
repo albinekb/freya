@@ -1,32 +1,14 @@
 use std::time::Duration;
 
-use dioxus_core::prelude::{
-    spawn,
-    use_hook,
-    Task,
-};
-use dioxus_hooks::{
-    use_memo,
-    use_reactive,
-    use_signal,
-    Dependency,
-};
-use dioxus_signals::{
-    Memo,
-    ReadOnlySignal,
-    Readable,
-    Signal,
-    Writable,
-};
+use dioxus_core::prelude::{spawn, use_hook, Task};
+use dioxus_hooks::{use_memo, use_reactive, use_signal, Dependency};
+use dioxus_signals::{Memo, ReadOnlySignal, Readable, Signal, Writable};
 use easer::functions::*;
 use freya_engine::prelude::Color;
 use freya_node_state::Parse;
-use tokio::time::Instant;
+use tokio::time::{sleep, Instant};
 
-use crate::{
-    use_platform,
-    UsePlatform,
-};
+use crate::{use_platform, UsePlatform};
 
 pub fn apply_value(
     origin: f32,
@@ -401,7 +383,7 @@ impl Context {
 }
 
 /// Controls the direction of the animation.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum AnimDirection {
     Forward,
     Reverse,
@@ -431,6 +413,7 @@ pub struct UseAnimator<Animated: PartialEq + Clone + 'static> {
     pub(crate) value_and_ctx: Memo<(Animated, Context)>,
     pub(crate) platform: UsePlatform,
     pub(crate) is_running: Signal<bool>,
+    pub(crate) is_paused: Signal<bool>,
     pub(crate) has_run_yet: Signal<bool>,
     pub(crate) task: Signal<Option<Task>>,
 }
@@ -462,6 +445,14 @@ impl<Animated: PartialEq + Clone + 'static> UseAnimator<Animated> {
         *self.is_running.read()
     }
 
+    pub fn is_paused(&self) -> bool {
+        *self.is_paused.read()
+    }
+
+    pub fn peek_is_paused(&self) -> bool {
+        *self.is_paused.peek()
+    }
+
     /// Checks if it has run yet, by subscribing.
     pub fn has_run_yet(&self) -> bool {
         *self.has_run_yet.read()
@@ -482,12 +473,28 @@ impl<Animated: PartialEq + Clone + 'static> UseAnimator<Animated> {
         self.run(AnimDirection::Forward)
     }
 
+    pub fn pause(&mut self) {
+        *self.is_paused.write() = true;
+        if let Some(task) = self.task.read().as_ref() {
+            task.pause();
+        }
+    }
+
+    pub fn resume(&mut self) {
+        *self.is_paused.write() = false;
+        if let Some(task) = self.task.read().as_ref() {
+            task.resume();
+        }
+    }
+
     /// Run the animation with a given [`AnimDirection`]
     pub fn run(&self, mut direction: AnimDirection) {
         let ctx = &self.value_and_ctx.peek().1;
         let platform = self.platform;
         let mut is_running = self.is_running;
+        let mut is_paused = self.is_paused;
         let mut ticker = platform.new_ticker();
+
         let mut values = ctx.animated_values.clone();
         let mut has_run_yet = self.has_run_yet;
         let on_finish = ctx.on_finish;
@@ -495,6 +502,7 @@ impl<Animated: PartialEq + Clone + 'static> UseAnimator<Animated> {
 
         // Cancel previous animations
         if let Some(task) = task.write().take() {
+            println!("Cancelling task");
             task.cancel();
         }
 
@@ -502,12 +510,14 @@ impl<Animated: PartialEq + Clone + 'static> UseAnimator<Animated> {
             *has_run_yet.write() = true;
         }
         is_running.set(true);
+        // is_paused.set(false);
 
         let animation_task = spawn(async move {
             platform.request_animation_frame();
 
             let mut index = 0;
             let mut prev_frame = Instant::now();
+            let mut paused_at: Option<Duration> = None;
 
             // Prepare the animations with the the proper direction
             for value in values.iter_mut() {
@@ -515,11 +525,24 @@ impl<Animated: PartialEq + Clone + 'static> UseAnimator<Animated> {
             }
 
             loop {
+                if *is_paused.peek() {
+                    if paused_at.is_none() {
+                        paused_at = Some(prev_frame.elapsed());
+                    }
+                }
+
                 // Wait for the event loop to tick
                 ticker.tick().await;
+
                 platform.request_animation_frame();
 
-                index += prev_frame.elapsed().as_millis() as i32;
+                if *is_paused.peek() {
+                    continue;
+                }
+
+                if paused_at.take().is_none() {
+                    index += prev_frame.elapsed().as_millis() as i32;
+                }
 
                 let is_finished = values
                     .iter()
@@ -646,6 +669,7 @@ pub fn use_animation<Animated: PartialEq + Clone + 'static>(
 ) -> UseAnimator<Animated> {
     let platform = use_platform();
     let is_running = use_signal(|| false);
+    let is_paused = use_signal(|| false);
     let has_run_yet = use_signal(|| false);
     let task = use_signal(|| None);
 
@@ -658,6 +682,7 @@ pub fn use_animation<Animated: PartialEq + Clone + 'static>(
         value_and_ctx,
         platform,
         is_running,
+        is_paused,
         has_run_yet,
         task,
     };
@@ -680,6 +705,7 @@ where
 {
     let platform = use_platform();
     let is_running = use_signal(|| false);
+    let is_paused = use_signal(|| false);
     let has_run_yet = use_signal(|| false);
     let task = use_signal(|| None);
 
@@ -692,6 +718,7 @@ where
         value_and_ctx,
         platform,
         is_running,
+        is_paused,
         has_run_yet,
         task,
     };

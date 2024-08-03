@@ -1,24 +1,11 @@
 use dioxus::prelude::*;
 use freya_elements::{
     elements as dioxus_elements,
-    events::{
-        KeyboardEvent,
-        PointerEvent,
-        PointerType,
-    },
+    events::{KeyboardEvent, PointerEvent, PointerType},
 };
-use freya_hooks::{
-    use_applied_theme,
-    use_focus,
-    use_platform,
-    ButtonTheme,
-    ButtonThemeWith,
-};
+use freya_hooks::{use_applied_theme, use_focus, use_platform, ButtonTheme, ButtonThemeWith};
 use winit::{
-    event::{
-        MouseButton,
-        TouchPhase,
-    },
+    event::{MouseButton, TouchPhase},
     window::CursorIcon,
 };
 
@@ -47,6 +34,8 @@ pub struct ButtonProps {
     pub onpress: Option<EventHandler<PressEvent>>,
     /// Event handler for when the button is clicked. Not recommended, use `onpress` instead.
     pub onclick: Option<EventHandler<()>>,
+    #[props(default = false, into)]
+    pub auto_focus: Option<bool>,
 }
 
 /// Identifies the current status of the Button.
@@ -86,6 +75,7 @@ pub fn Button(
         children,
         theme,
         onclick,
+        auto_focus,
     }: ButtonProps,
 ) -> Element {
     let mut focus = use_focus();
@@ -93,6 +83,20 @@ pub fn Button(
     let platform = use_platform();
 
     let focus_id = focus.attribute();
+
+    let mut auto_focus_sig = use_signal(|| auto_focus.unwrap_or(false));
+    use_effect(move || {
+        let auto_focus = *auto_focus_sig.peek();
+        if !auto_focus {
+            return;
+        }
+
+        *auto_focus_sig.write() = false;
+        let node_id = focus.id();
+        platform
+            .send(freya_core::event_messages::EventMessage::QueueFocusAccessibilityNode(node_id))
+            .expect("Failed to send message");
+    });
 
     let ButtonTheme {
         background,

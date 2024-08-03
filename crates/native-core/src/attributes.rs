@@ -66,6 +66,8 @@ pub enum AttributeName {
     ImageData,
     SvgData,
     SvgContent,
+    Scale,
+    Fill,
 }
 
 impl FromStr for AttributeName {
@@ -137,6 +139,8 @@ impl FromStr for AttributeName {
             "image_data" => Ok(AttributeName::ImageData),
             "svg_data" => Ok(AttributeName::SvgData),
             "svg_content" => Ok(AttributeName::SvgContent),
+            "scale" => Ok(AttributeName::Scale),
+            "fill" => Ok(AttributeName::Fill),
             _ => Err(format!("{attr} not supported.")),
         }
     }

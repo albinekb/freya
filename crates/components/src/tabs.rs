@@ -1,14 +1,9 @@
 use dioxus::prelude::*;
 use freya_elements::elements as dioxus_elements;
+use freya_elements::events::KeyboardEvent;
 use freya_hooks::{
-    use_activable_route,
-    use_applied_theme,
-    use_focus,
-    use_platform,
-    BottomTabTheme,
-    BottomTabThemeWith,
-    TabTheme,
-    TabThemeWith,
+    use_activable_route, use_applied_theme, use_focus, use_platform, BottomTabTheme,
+    BottomTabThemeWith, TabTheme, TabThemeWith, UseFocus,
 };
 use winit::window::CursorIcon;
 
@@ -17,10 +12,7 @@ use winit::window::CursorIcon;
 #[component]
 pub fn Tabsbar(children: Element) -> Element {
     rsx!(
-        rect {
-            direction: "horizontal",
-            {children}
-        }
+        rect { direction: "horizontal", {children} }
     )
 }
 
@@ -141,13 +133,9 @@ pub fn Tab(children: Element, theme: Option<TabThemeWith>) -> Element {
                 padding: "{padding}",
                 main_align: "center",
                 cross_align: "center",
-                {children},
+                {children}
             }
-            rect {
-                height: "2",
-                width: "fill-min",
-                background: "{border}"
-            }
+            rect { height: "2", width: "fill-min", background: "{border}" }
         }
     )
 }
@@ -198,16 +186,20 @@ pub fn Tab(children: Element, theme: Option<TabThemeWith>) -> Element {
 #[allow(non_snake_case)]
 #[component]
 pub fn BottomTab(children: Element, theme: Option<BottomTabThemeWith>) -> Element {
-    let focus = use_focus();
     let mut status = use_signal(TabStatus::default);
     let platform = use_platform();
     let is_active = use_activable_route();
+    let trigger: UseCallback<()> = use_context();
+    let mut focus: UseFocus = use_context();
 
     let focus_id = focus.attribute();
 
     let BottomTabTheme {
         background,
         hover_background,
+        active_background,
+        border_fill,
+        focus_border_fill,
         padding,
         width,
         height,
@@ -230,16 +222,31 @@ pub fn BottomTab(children: Element, theme: Option<BottomTabThemeWith>) -> Elemen
         status.set(TabStatus::default());
     };
 
+    let onkeydown = move |ev: KeyboardEvent| {
+        if focus.validate_keydown(&ev) {
+            trigger.call();
+        }
+    };
+
     let background = match *status.read() {
-        _ if focus.is_selected() || is_active => hover_background,
         TabStatus::Hovering => hover_background,
+        _ if focus.is_selected() => hover_background,
+        _ if is_active => active_background,
         TabStatus::Idle => background,
     };
+
+    let border = if focus.is_selected() {
+        format!("2 solid {focus_border_fill}")
+    } else {
+        format!("1 solid {border_fill}")
+    };
+
     rsx!(
         rect {
             onmouseenter,
             onmouseleave,
-            focus_id,
+            onkeydown,
+
             width: "{width}",
             height: "{height}",
             focusable: "true",
@@ -247,13 +254,14 @@ pub fn BottomTab(children: Element, theme: Option<BottomTabThemeWith>) -> Elemen
             role: "tab",
             color: "{font_theme.color}",
             background: "{background}",
+            border: "{border}",
             text_align: "center",
             padding: "{padding}",
             main_align: "center",
             cross_align: "center",
             corner_radius: "99",
             margin: "2 4",
-            {children},
+            {children}
         }
     )
 }

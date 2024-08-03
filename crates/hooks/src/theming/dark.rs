@@ -1,7 +1,4 @@
-use crate::{
-    cow_borrowed,
-    theming::*,
-};
+use crate::{cow_borrowed, theming::*};
 
 pub const DARK_THEME: Theme = Theme {
     name: "dark",
@@ -201,6 +198,9 @@ pub const DARK_THEME: Theme = Theme {
     bottom_tab: BottomTabTheme {
         background: cow_borrowed!("transparent"),
         hover_background: cow_borrowed!("rgb(45, 45, 45)"),
+        active_background: cow_borrowed!("rgb(40, 40, 40)"),
+        border_fill: cow_borrowed!("rgb(80, 80, 80)"),
+        focus_border_fill: cow_borrowed!("rgb(110, 110, 110)"),
         font_theme: FontTheme {
             color: cow_borrowed!("white"),
         },

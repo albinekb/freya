@@ -562,6 +562,9 @@ define_theme! {
         %[cows]
         background: str,
         hover_background: str,
+        active_background: str,
+        border_fill: str,
+        focus_border_fill: str,
         width: str,
         height: str,
         padding: str,

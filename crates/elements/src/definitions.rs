@@ -490,6 +490,8 @@ builder_constructors! {
         opacity: String,
 
         svg_data: String,
+        scale: String,
+        fill: String,
         svg_content: String,
         role: String,
         focus_id: AccessibilityId,

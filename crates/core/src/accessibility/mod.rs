@@ -1,27 +1,23 @@
 pub mod accessibility_manager;
 pub use accessibility_manager::*;
-use freya_native_core::{
-    node::NodeType,
-    real_dom::NodeImmutable,
-    tags::TagName,
-    NodeId,
-};
+use freya_native_core::{node::NodeType, real_dom::NodeImmutable, tags::TagName, NodeId};
 use freya_node_state::AccessibilityNodeState;
 use torin::torin::Torin;
 
 use crate::{
-    dom::{
-        DioxusDOM,
-        DioxusNode,
-    },
+    dom::{DioxusDOM, DioxusNode},
     types::AccessibilityId,
 };
 
 /// Direction for the next Accessibility Node to be focused.
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum AccessibilityFocusDirection {
     Forward,
     Backward,
+    Up,
+    Down,
+    Right,
+    Left,
 }
 
 /// Shortcut functions to retrieve Acessibility info from a Dioxus Node
@@ -73,7 +69,9 @@ pub fn process_accessibility(
         }
 
         let layout_node = layout.get(node.id()).unwrap();
+
         let node_accessibility = &*node.get::<AccessibilityNodeState>().unwrap();
+
         if let Some(accessibility_id) = node_accessibility.accessibility_id {
             accessibility_manager.add_node(
                 &node,
@@ -82,6 +80,8 @@ pub fn process_accessibility(
                 node_accessibility,
             );
         }
+
+        // if let Some(tt) = node.node_type().
 
         if let Some(tag) = node.node_type().tag() {
             if *tag == TagName::Paragraph || *tag == TagName::Label {

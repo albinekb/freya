@@ -1,60 +1,29 @@
-use std::{
-    ffi::CString,
-    mem,
-    num::NonZeroU32,
-};
+use std::{ffi::CString, mem, num::NonZeroU32};
 
 use dioxus_core::VirtualDom;
-use freya_core::{
-    dom::SafeDOM,
-    prelude::EventMessage,
-};
+use freya_core::{dom::SafeDOM, prelude::EventMessage};
 use freya_engine::prelude::*;
-use gl::{
-    types::*,
-    *,
-};
+use gl::{types::*, *};
 use glutin::{
-    config::{
-        ConfigTemplateBuilder,
-        GlConfig,
-    },
+    config::{ConfigTemplateBuilder, GlConfig},
     context::{
-        ContextApi,
-        ContextAttributesBuilder,
-        GlProfile,
-        NotCurrentGlContext,
+        ContextApi, ContextAttributesBuilder, GlProfile, NotCurrentGlContext,
         PossiblyCurrentContext,
     },
-    display::{
-        GetGlDisplay,
-        GlDisplay,
-    },
+    display::{GetGlDisplay, GlDisplay},
     surface::{
-        GlSurface,
-        Surface as GlutinSurface,
-        SurfaceAttributesBuilder,
-        SwapInterval,
-        WindowSurface,
+        GlSurface, Surface as GlutinSurface, SurfaceAttributesBuilder, SwapInterval, WindowSurface,
     },
 };
 use glutin_winit::DisplayBuilder;
 use winit::{
     dpi::LogicalSize,
-    event_loop::{
-        ActiveEventLoop,
-        EventLoopProxy,
-    },
+    event_loop::{ActiveEventLoop, EventLoopProxy},
     raw_window_handle::HasWindowHandle,
     window::Window,
 };
 
-use crate::{
-    app::Application,
-    config::WindowConfig,
-    devtools::Devtools,
-    LaunchConfig,
-};
+use crate::{app::Application, config::WindowConfig, devtools::Devtools, LaunchConfig};
 
 pub struct NotCreatedState<'a, State: Clone + 'static> {
     pub(crate) sdom: SafeDOM,
@@ -78,6 +47,7 @@ pub struct CreatedState {
 }
 
 pub enum WindowState<'a, State: Clone + 'static> {
+    Destroyed,
     NotCreated(NotCreatedState<'a, State>),
     Creating,
     Created(CreatedState),
@@ -89,6 +59,12 @@ impl<'a, State: Clone + 'a> WindowState<'a, State> {
             panic!("Unexpected.")
         };
         created
+    }
+
+    pub fn destroy(&mut self) {
+        let mut empty = WindowState::Destroyed;
+        mem::swap(self, &mut empty);
+        mem::drop(empty);
     }
 
     pub fn has_been_created(&self) -> bool {

@@ -1,20 +1,8 @@
 use dioxus::prelude::*;
-use freya_elements::{
-    elements as dioxus_elements,
-    events::KeyboardEvent,
-};
-use freya_hooks::{
-    theme_with,
-    use_applied_theme,
-    ButtonThemeWith,
-    PopupTheme,
-    PopupThemeWith,
-};
+use freya_elements::{elements as dioxus_elements, events::KeyboardEvent};
+use freya_hooks::{theme_with, use_applied_theme, ButtonThemeWith, PopupTheme, PopupThemeWith};
 
-use crate::{
-    Button,
-    CrossIcon,
-};
+use crate::{Button, CrossIcon};
 
 /// The background of the [`Popup`] component.
 #[allow(non_snake_case)]
@@ -119,12 +107,14 @@ pub fn Popup(
                 width: "{width}",
                 height: "{height}",
                 onkeydown,
+                role: "dialog",
                 if show_close_button {
                     rect {
                         height: "0",
                         width: "fill",
                         cross_align: "end",
                         Button {
+                            auto_focus: true,
                             theme: theme_with!(ButtonTheme {
                                 padding: "6".into(),
                                 margin: "0".into(),
@@ -177,11 +167,7 @@ pub fn PopupContent(children: Element) -> Element {
 mod test {
     use dioxus::prelude::use_signal;
     use freya::prelude::*;
-    use freya_elements::events::keyboard::{
-        Code,
-        Key,
-        Modifiers,
-    };
+    use freya_elements::events::keyboard::{Code, Key, Modifiers};
     use freya_testing::prelude::*;
 
     #[tokio::test]

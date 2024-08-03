@@ -3,29 +3,14 @@ use freya_native_core::{
     exports::shipyard::Component,
     node::OwnedAttributeValue,
     node_ref::NodeView,
-    prelude::{
-        AttributeMaskBuilder,
-        Dependancy,
-        NodeMaskBuilder,
-        State,
-    },
+    prelude::{AttributeMaskBuilder, Dependancy, NodeMaskBuilder, State},
     SendAnyMap,
 };
 use freya_native_core_macro::partial_derive_state;
 
 use crate::{
-    parsing::ExtSplit,
-    AttributesBytes,
-    Border,
-    BorderAlignment,
-    CornerRadius,
-    CustomAttributeValues,
-    Fill,
-    OverflowMode,
-    Parse,
-    ParseAttribute,
-    ParseError,
-    Shadow,
+    parsing::ExtSplit, AttributesBytes, Border, BorderAlignment, CornerRadius,
+    CustomAttributeValues, Fill, OverflowMode, Parse, ParseAttribute, ParseError, Shadow,
 };
 
 #[derive(Default, Debug, Clone, PartialEq, Component)]
@@ -38,6 +23,8 @@ pub struct StyleState {
     pub svg_data: Option<AttributesBytes>,
     pub overflow: OverflowMode,
     pub opacity: Option<f32>,
+    pub scale: Option<f32>,
+    pub fill: Option<Fill>,
 }
 
 impl ParseAttribute for StyleState {
@@ -119,6 +106,20 @@ impl ParseAttribute for StyleState {
                     self.opacity = Some(value.parse::<f32>().map_err(|_| ParseError)?);
                 }
             }
+            AttributeName::Scale => {
+                if let Some(value) = attr.value.as_text() {
+                    let scale = value.parse::<f32>().map_err(|_| ParseError)?;
+                    self.scale = Some(scale);
+                }
+            }
+            AttributeName::Fill => {
+                if let Some(value) = attr.value.as_text() {
+                    if value == "none" {
+                        return Ok(());
+                    }
+                    self.fill = Some(Fill::parse(value)?);
+                }
+            }
             _ => {}
         }
 
@@ -148,6 +149,8 @@ impl State<CustomAttributeValues> for StyleState {
             AttributeName::SvgContent,
             AttributeName::Overflow,
             AttributeName::Opacity,
+            AttributeName::Scale,
+            AttributeName::Fill,
         ]));
 
     fn update<'a>(

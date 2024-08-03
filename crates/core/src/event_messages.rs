@@ -1,12 +1,9 @@
 use dioxus_core::Template;
 use torin::prelude::CursorPoint;
 use uuid::Uuid;
-use winit::window::{
-    CursorIcon,
-    Window,
-};
+use winit::window::{CursorIcon, Window};
 
-use crate::prelude::PlatformEvent;
+use crate::prelude::{AccessibilityFocusDirection, PlatformEvent};
 
 pub struct TextGroupMeasurement {
     pub text_id: Uuid,
@@ -37,6 +34,7 @@ pub enum EventMessage {
     FocusNextAccessibilityNode,
     /// Focus the previous accessibility Node
     FocusPrevAccessibilityNode,
+    FocusAccessibilityNodeWithDirection(AccessibilityFocusDirection),
     /// Close the whole app
     ExitApp,
     /// Callback to access the Window.

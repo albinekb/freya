@@ -2,12 +2,7 @@ use std::fmt;
 
 use freya_engine::prelude::Color;
 
-use crate::{
-    DisplayColor,
-    LinearGradient,
-    Parse,
-    ParseError,
-};
+use crate::{DisplayColor, LinearGradient, Parse, ParseError};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Fill {

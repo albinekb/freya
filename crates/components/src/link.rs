@@ -1,21 +1,15 @@
 use std::borrow::Cow;
 
 use dioxus::prelude::*;
-use dioxus_router::prelude::{
-    navigator,
-    IntoRoutable,
-};
+use dioxus_router::prelude::{navigator, IntoRoutable};
 use freya_elements::{
     elements as dioxus_elements,
-    events::MouseEvent,
+    events::{KeyboardEvent, MouseEvent},
 };
-use freya_hooks::{
-    use_applied_theme,
-    LinkThemeWith,
-};
+use freya_hooks::{use_applied_theme, use_focus, LinkThemeWith};
 use winit::event::MouseButton;
 
-use crate::Tooltip;
+use crate::{PressEvent, Tooltip};
 
 /// Tooltip configuration for the [`Link`] component.
 #[derive(Clone, PartialEq)]
@@ -123,27 +117,42 @@ pub fn Link(
         is_hovering.set(false);
     };
 
+    let url_clone = url.clone();
+    let mut focus = use_focus();
+    use_context_provider(move || focus.clone());
+    let trigger: UseCallback<()> = use_callback(move || {
+        focus.focus();
+        // Open the url if there is any
+        // otherwise change the dioxus router route
+        if let Some(url) = &url_clone {
+            let res = open::that(url);
+
+            if let (Err(_), Some(onerror)) = (res, onerror.as_ref()) {
+                onerror.call(());
+            }
+
+            // TODO(marc2332): Log unhandled errors
+        } else {
+            let router = navigator();
+            router.push(to.clone());
+        }
+    });
+
+    use_context_provider(move || trigger.clone());
+
     let onclick = {
-        to_owned![url, to];
         move |event: MouseEvent| {
             if !matches!(event.trigger_button, Some(MouseButton::Left)) {
                 return;
             }
 
-            // Open the url if there is any
-            // otherwise change the dioxus router route
-            if let Some(url) = &url {
-                let res = open::that(url);
+            trigger.call();
+        }
+    };
 
-                if let (Err(_), Some(onerror)) = (res, onerror.as_ref()) {
-                    onerror.call(());
-                }
-
-                // TODO(marc2332): Log unhandled errors
-            } else {
-                let router = navigator();
-                router.push(to.clone());
-            }
+    let onkeydown = move |ev: KeyboardEvent| {
+        if focus.validate_keydown(&ev) {
+            trigger.call();
         }
     };
 
@@ -164,6 +173,8 @@ pub fn Link(
             onmouseenter,
             onmouseleave,
             onclick,
+            onkeydown,
+            focus_id: focus.attribute(),
             color: "{color}",
             {children}
         }
@@ -192,11 +203,7 @@ pub fn Link(
 
 #[cfg(test)]
 mod test {
-    use dioxus_router::prelude::{
-        Outlet,
-        Routable,
-        Router,
-    };
+    use dioxus_router::prelude::{Outlet, Routable, Router};
     use freya::prelude::*;
     use freya_testing::prelude::*;
 

@@ -1,14 +1,7 @@
 use std::collections::HashSet;
 
 use dioxus::prelude::{
-    current_scope_id,
-    schedule_update_any,
-    use_drop,
-    use_hook,
-    Readable,
-    ScopeId,
-    Signal,
-    Writable,
+    current_scope_id, schedule_update_any, use_drop, use_hook, Readable, ScopeId, Signal, Writable,
     WritableVecExt,
 };
 
@@ -57,6 +50,7 @@ pub struct ScrollController {
     requests: Signal<Vec<ScrollRequest>>,
     x: Signal<i32>,
     y: Signal<i32>,
+    size: Signal<Option<(f32, f32)>>,
 }
 
 impl From<ScrollController> for (Signal<i32>, Signal<i32>) {
@@ -72,6 +66,7 @@ impl ScrollController {
             y: Signal::new(y),
             requests_subscribers: Signal::new(HashSet::new()),
             requests: Signal::new(initial_requests),
+            size: Signal::new(None),
         }
     }
 
@@ -91,7 +86,7 @@ impl ScrollController {
             if request.applied_by.contains(&scope_id) {
                 return true;
             }
-
+            self.size.write().replace((width, height));
             match request {
                 ScrollRequest {
                     position: ScrollPosition::Start,
@@ -143,6 +138,10 @@ impl ScrollController {
 
     pub fn scroll_to_y(&mut self, to: i32) {
         self.y.set(to);
+    }
+
+    pub fn get_size(&self) -> Option<(f32, f32)> {
+        *self.size.peek()
     }
 
     pub fn scroll_to(
@@ -197,39 +196,22 @@ mod test {
             });
 
             rsx!(
-                ScrollView {
-                    scroll_controller,
+                ScrollView { scroll_controller,
                     Button {
                         onclick: move |_| {
                             scroll_controller.scroll_to(ScrollPosition::End, ScrollDirection::Vertical);
                         },
-                        label {
-                            "Scroll Down"
-                        }
+                        label { "Scroll Down" }
                     }
-                    rect {
-                        height: "200",
-                        width: "200",
-                    },
-                    rect {
-                        height: "200",
-                        width: "200",
-                    },
-                    rect {
-                        height: "200",
-                        width: "200",
-                    }
-                    rect {
-                        height: "200",
-                        width: "200",
-                    }
+                    rect { height: "200", width: "200" }
+                    rect { height: "200", width: "200" }
+                    rect { height: "200", width: "200" }
+                    rect { height: "200", width: "200" }
                     Button {
                         onclick: move |_| {
                             scroll_controller.scroll_to(ScrollPosition::Start, ScrollDirection::Vertical);
                         },
-                        label {
-                            "Scroll up"
-                        }
+                        label { "Scroll up" }
                     }
                 }
             )
